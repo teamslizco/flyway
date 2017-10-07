@@ -1,0 +1,24 @@
+#!/bin/bash
+#
+# Wait until PostgreSQL is up if PG_WAIT_HOST is set to host/ip.
+#
+
+set -o errexit
+
+if [ -n "${PG_WAIT_HOST}" ]; then
+  : "${PG_WAIT_RETRIES:=8}"
+  : "${PG_WAIT_TIMEOUT:=3}"
+  : "${PG_WAIT_PORT:=5432}"
+  i=0
+  until [ "$((i++))" -gt "${PG_WAIT_RETRIES}" ]; do
+    if pg_isready -t "${PG_WAIT_TIMEOUT}" -h "${PG_WAIT_HOST}" -p "${PG_WAIT_PORT}"; then
+      break
+    elif [ "${i}" -gt "${PG_WAIT_RETRIES}" ]; then
+      exit 1
+    fi
+    echo -n "retry ${i} of ${PG_WAIT_RETRIES} - "
+    sleep 1
+  done
+fi
+
+exec "${@}"
